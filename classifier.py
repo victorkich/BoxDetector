@@ -1,9 +1,11 @@
-import torch
 import cv2
-import numpy as np
+import torch  # Added torch for the device selection
 from ultralytics import YOLO
 
-model = YOLO('best.pt')
+# Check if CUDA is available and use it, otherwise default to CPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+model = YOLO('best.pt').to(device)  # Move the model to the selected device
 model = model.float()
 cap = cv2.VideoCapture(0)
 
@@ -13,11 +15,15 @@ while cap.isOpened():
     success, frame = cap.read()
 
     if success:
+        # Convert frame to torch tensor and move to device
+        frame_tensor = torch.from_numpy(frame).permute(2, 0, 1).float().div(255.0).unsqueeze(0).to(device)
+
         # Run YOLOv8 inference on the frame
-        results = model(frame)
+        results = model(frame_tensor)
 
         # Visualize the results on the frame
         annotated_frame = results[0].plot()
+        annotated_frame = annotated_frame.permute(1, 2, 0).cpu().numpy()  # Convert tensor back to numpy ndarray for visualization
 
         # Display the annotated frame
         cv2.imshow("YOLOv8 Inference", annotated_frame)
