@@ -4,9 +4,9 @@ from ultralytics import YOLO
 model = YOLO('best.pt')
 
 # Abre três câmeras. Seus índices podem variar. Aqui estou assumindo 0, 1 e 2.
-cap1 = cv2.VideoCapture(0)
-cap2 = cv2.VideoCapture(1)
-cap3 = cv2.VideoCapture(2)
+cap1 = cv2.VideoCapture(2)
+cap2 = cv2.VideoCapture(3)
+cap3 = cv2.VideoCapture(4)
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 color = (0, 255, 0)  # Verde
