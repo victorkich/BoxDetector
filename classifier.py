@@ -4,7 +4,7 @@ import numpy as np
 from ultralytics import YOLO
 
 model = YOLO('best.pt')
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(2)
 
 # For calculating FPS
 font = cv2.FONT_HERSHEY_SIMPLEX
