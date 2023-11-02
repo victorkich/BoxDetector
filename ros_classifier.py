@@ -37,9 +37,7 @@ def combine_and_show_frames():
     if cv2.waitKey(1) & 0xFF == ord("q"):
         cv2.destroyAllWindows()
         rospy.signal_shutdown("User terminated")
-
-
-frames_dict = {}
+        
 
 def process_image(msg, camera_name):
     global frames_dict
