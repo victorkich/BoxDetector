@@ -38,7 +38,11 @@ def combine_and_show_frames():
         cv2.destroyAllWindows()
         rospy.signal_shutdown("User terminated")
 
+
+frames_dict = {}
+
 def process_image(msg, camera_name):
+    global frames_dict
     frame = bridge.imgmsg_to_cv2(msg, "bgr8")
     res = yolo_model(frame)
 
@@ -72,9 +76,6 @@ def process_image(msg, camera_name):
 
     frames_dict[camera_name] = frame
 
-    # Se todas as câmeras forneceram seus frames, mostramos o frame combinado
-    if all(frame is not None for frame in frames_dict.values()):
-        combine_and_show_frames()
 
 if __name__ == '__main__':
     rospy.init_node('image_listener_node')
@@ -85,4 +86,7 @@ if __name__ == '__main__':
     rospy.Subscriber("/usb_cam3/image_raw", Image, image_callback_3)
 
     # Mantenha o nó em execução até que seja fechado
-    rospy.spin()
+    while not rospy.is_shutdown():
+        # Se todas as câmeras forneceram seus frames, mostramos o frame combinado
+        if all(frame is not None for frame in frames_dict.values()):
+            combine_and_show_frames()
