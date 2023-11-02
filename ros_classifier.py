@@ -2,6 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import Image
+from ktm_pede_detector_msgs.msg import BoundingBox
 
 from cv_bridge import CvBridge
 
