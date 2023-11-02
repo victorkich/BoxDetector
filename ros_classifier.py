@@ -10,6 +10,7 @@ from ultralytics import YOLO
 
 # Inicializa o modelo YOLO
 yolo_model = YOLO('best.pt')
+letter_model = YOLO('letter.pt')
 
 bridge = CvBridge()
 
