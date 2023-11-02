@@ -2,6 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import Image
+
 from cv_bridge import CvBridge
 
 import cv2
@@ -20,14 +21,19 @@ bridge = CvBridge()
 # Dicionário global para armazenar frames processados de cada câmera
 frames_dict = {"Camera 1": None, "Camera 2": None, "Camera 3": None}
 
+# Publishers para cada câmera
+pub_bbox1 = rospy.Publisher('/camera1/bounding_boxes', BoundingBox, queue_size=10)
+pub_bbox2 = rospy.Publisher('/camera2/bounding_boxes', BoundingBox, queue_size=10)
+pub_bbox3 = rospy.Publisher('/camera3/bounding_boxes', BoundingBox, queue_size=10)
+
 def image_callback_1(msg):
-    process_image(msg, "Camera 1")
+    process_image(msg, "Camera 1", pub_bbox1)
 
 def image_callback_2(msg):
-    process_image(msg, "Camera 2")
+    process_image(msg, "Camera 2", pub_bbox2)
 
 def image_callback_3(msg):
-    process_image(msg, "Camera 3")
+    process_image(msg, "Camera 3", pub_bbox3)
 
 def combine_and_show_frames():
     # Combina todos os frames em um único frame para exibição
@@ -37,9 +43,9 @@ def combine_and_show_frames():
     if cv2.waitKey(1) & 0xFF == ord("q"):
         cv2.destroyAllWindows()
         rospy.signal_shutdown("User terminated")
-        
 
-def process_image(msg, camera_name):
+
+def process_image(msg, camera_name, publisher):
     global frames_dict
     frame = bridge.imgmsg_to_cv2(msg, "bgr8")
     res = yolo_model(frame)
@@ -59,6 +65,18 @@ def process_image(msg, camera_name):
 
             # Box coordinates
             x1, y1, x2, y2 = map(int, box[:4])
+
+            # Creating the BoundingBox Message
+            bbox_msg = BoundingBox()
+            bbox_msg.Class = yolo_classes[int(cls_idx)]
+            bbox_msg.probability = conf
+            bbox_msg.xmin = x1
+            bbox_msg.ymin = y1
+            bbox_msg.xmax = x2
+            bbox_msg.ymax = y2
+
+            # Publishing
+            publisher.publish(bbox_msg)
 
             # Extract ROI from the frame
             roi = frame[y1:y2, x1:x2]
