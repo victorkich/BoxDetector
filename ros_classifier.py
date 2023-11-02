@@ -12,6 +12,9 @@ from ultralytics import YOLO
 yolo_model = YOLO('best.pt')
 letter_model = YOLO('letter.pt')
 
+yolo_classes = {0: "Blue Box", 1: "Green Box"}
+letter_classes = {0: "A", 1: "B", 2: "C"}
+
 bridge = CvBridge()
 
 # Dicionário global para armazenar frames processados de cada câmera
