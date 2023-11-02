@@ -41,7 +41,6 @@ def combine_and_show_frames():
 def process_image(msg, camera_name):
     frame = bridge.imgmsg_to_cv2(msg, "bgr8")
     res = yolo_model(frame)
-    annotated_frame = res[0].plot()
 
     boxes = res[0].boxes
     confidences = boxes.conf  # Get confidence scores
@@ -49,6 +48,7 @@ def process_image(msg, camera_name):
     xyxys = boxes.xyxy
 
     # Iterate over all detected boxes
+    print("A")
     if len(confidences) > 0:
         if max(confidences) > 0.75:
             higher_conf = np.argmax(confidences.cpu().numpy())
@@ -75,6 +75,7 @@ def process_image(msg, camera_name):
 
     # Se todas as câmeras forneceram seus frames, mostramos o frame combinado
     if all(frame is not None for frame in frames_dict.values()):
+        print("B")
         combine_and_show_frames()
 
 if __name__ == '__main__':
