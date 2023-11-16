@@ -16,7 +16,7 @@ letter_model = YOLO('letter.pt')
 
 yolo_classes = {0: "Blue Box", 1: "Green Box"}
 letter_classes = {0: "A", 1: "B", 2: "C"}
-WIDTH = 320
+WIDTH = 360
 HEIGHT = 240
 
 bridge = CvBridge()
