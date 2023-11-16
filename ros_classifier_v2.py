@@ -60,10 +60,8 @@ def process_image(msg, camera_name, publisher):
     classes = boxes.cls
     xyxys = boxes.xyxy
 
+    # Verifica se há alguma detecção com confiança suficiente
     detected = False
-    cls_idx = None
-    conf = None
-
     if len(confidences) > 0 and max(confidences) > 0.75:
         higher_conf = np.argmax(confidences.cpu().numpy())
         box = xyxys[higher_conf]
@@ -71,44 +69,43 @@ def process_image(msg, camera_name, publisher):
         cls_idx = classes[higher_conf]
         detected = True
 
-    if detected:
         # Atualiza a bounding box e o contador
-        last_bbox[camera_name]["bbox"] = box
-        last_bbox[camera_name]["counter"] = 20  # Reset para 20 frames
-    else:
-        # Diminui o contador se não houver detecção
-        if last_bbox[camera_name]["counter"] > 0:
-            last_bbox[camera_name]["counter"] -= 1
+        last_bbox[camera_name] = {"bbox": box, "counter": 20, "cls_idx": cls_idx, "conf": conf}
+
+    # Diminui o contador se não houver detecção
+    if not detected and last_bbox[camera_name]["counter"] > 0:
+        last_bbox[camera_name]["counter"] -= 1
 
     # Desenha a bounding box se o contador for maior que 0
     if last_bbox[camera_name]["counter"] > 0:
         box = last_bbox[camera_name]["bbox"]
+        cls_idx = last_bbox[camera_name]["cls_idx"]
+        conf = last_bbox[camera_name]["conf"]
         x1, y1, x2, y2 = map(int, box[:4])
 
-        if cls_idx is not None and conf is not None:
-            # Creating the BoundingBox Message
-            bbox_msg = BoundingBox()
-            bbox_msg.Class = yolo_classes[int(cls_idx)]
-            bbox_msg.probability = conf
-            bbox_msg.xmin = x1
-            bbox_msg.ymin = y1
-            bbox_msg.xmax = x2
-            bbox_msg.ymax = y2
+        # Creating the BoundingBox Message
+        bbox_msg = BoundingBox()
+        bbox_msg.Class = yolo_classes[int(cls_idx)]
+        bbox_msg.probability = conf
+        bbox_msg.xmin = x1
+        bbox_msg.ymin = y1
+        bbox_msg.xmax = x2
+        bbox_msg.ymax = y2
 
-            # Publishing
-            publisher.publish(bbox_msg)
+        # Publishing
+        publisher.publish(bbox_msg)
 
-            # Extract ROI from the frame
-            roi = frame[y1:y2, x1:x2]
-            
-            result = letter_model(roi)
+        # Extract ROI from the frame
+        roi = frame[y1:y2, x1:x2]
+        
+        result = letter_model(roi)
 
-            # Annotate original frame with YOLO box, class, and confidence
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
-            letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
-            cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        # Annotate original frame with YOLO box, class, and confidence
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
+        letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
+        cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     frames_dict[camera_name] = frame
 
