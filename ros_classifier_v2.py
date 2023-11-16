@@ -61,9 +61,14 @@ def process_image(msg, camera_name, publisher):
     xyxys = boxes.xyxy
 
     detected = False
+    cls_idx = None
+    conf = None
+
     if len(confidences) > 0 and max(confidences) > 0.75:
         higher_conf = np.argmax(confidences.cpu().numpy())
         box = xyxys[higher_conf]
+        conf = confidences[higher_conf]
+        cls_idx = classes[higher_conf]
         detected = True
 
     if detected:
@@ -80,29 +85,30 @@ def process_image(msg, camera_name, publisher):
         box = last_bbox[camera_name]["bbox"]
         x1, y1, x2, y2 = map(int, box[:4])
 
-        # Creating the BoundingBox Message
-        bbox_msg = BoundingBox()
-        bbox_msg.Class = yolo_classes[int(cls_idx)]
-        bbox_msg.probability = conf
-        bbox_msg.xmin = x1
-        bbox_msg.ymin = y1
-        bbox_msg.xmax = x2
-        bbox_msg.ymax = y2
+        if cls_idx is not None and conf is not None:
+            # Creating the BoundingBox Message
+            bbox_msg = BoundingBox()
+            bbox_msg.Class = yolo_classes[int(cls_idx)]
+            bbox_msg.probability = conf
+            bbox_msg.xmin = x1
+            bbox_msg.ymin = y1
+            bbox_msg.xmax = x2
+            bbox_msg.ymax = y2
 
-        # Publishing
-        publisher.publish(bbox_msg)
+            # Publishing
+            publisher.publish(bbox_msg)
 
-        # Extract ROI from the frame
-        roi = frame[y1:y2, x1:x2]
-        
-        result = letter_model(roi)
+            # Extract ROI from the frame
+            roi = frame[y1:y2, x1:x2]
+            
+            result = letter_model(roi)
 
-        # Annotate original frame with YOLO box, class, and confidence
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
-        letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
-        cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-        cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            # Annotate original frame with YOLO box, class, and confidence
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
+            letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
+            cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     frames_dict[camera_name] = frame
 
