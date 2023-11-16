@@ -13,6 +13,11 @@ yolo_model = YOLO('best.pt')
 
 bridge = CvBridge()
 
+# Dicionário para armazenar a última bounding box detectada e o contador de frames
+last_boxes = {"Camera 1": {"box": None, "counter": 0, "smooth_box": None},
+              "Camera 2": {"box": None, "counter": 0, "smooth_box": None},
+              "Camera 3": {"box": None, "counter": 0, "smooth_box": None}}
+
 # Dicionário global para armazenar frames processados de cada câmera
 frames_dict = {"Camera 1": None, "Camera 2": None, "Camera 3": None}
 
@@ -35,37 +40,40 @@ def combine_and_show_frames():
         rospy.signal_shutdown("User terminated")
 
 def process_image(msg, camera_name):
+    global last_boxes
     frame = bridge.imgmsg_to_cv2(msg, "bgr8")
     res = yolo_model(frame)
-    annotated_frame = res[0].plot()
 
     boxes = res[0].boxes
-    confidences = boxes.conf  # Get confidence scores
-    classes = boxes.cls  # Get class indices
+    confidences = boxes.conf
     xyxys = boxes.xyxy
 
-    # Iterate over all detected boxes
-    if len(confidences) > 0:
-        if max(confidences) > 0.75:
-            higher_conf = np.argmax(confidences.cpu())
-            box = xyxys[higher_conf]
-            conf = confidences[higher_conf]
-            cls_idx = classes[higher_conf]
+    if len(confidences) > 0 and max(confidences) > 0.75:
+        higher_conf = np.argmax(confidences.cpu())
+        box = xyxys[higher_conf].cpu().numpy().astype(int)
 
-            # Box coordinates
-            x1, y1, x2, y2 = map(int, box[:4])
+        if last_boxes[camera_name]["box"] is not None:
+            # Suavização: Média entre a nova box e a box suavizada anterior
+            alpha = 0.7  # Fator de suavização
+            new_smooth_box = alpha * box + (1 - alpha) * last_boxes[camera_name]["smooth_box"]
+            last_boxes[camera_name]["smooth_box"] = new_smooth_box
+        else:
+            last_boxes[camera_name]["smooth_box"] = box
 
-            # Extract ROI from the frame
-            roi = frame[y1:y2, x1:x2]
-            
-            result = letter_model(roi)
+        last_boxes[camera_name]["box"] = box
+        last_boxes[camera_name]["counter"] = 20
 
-            # Annotate original frame with YOLO box, class, and confidence
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
-            letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
-            cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+    if last_boxes[camera_name]["counter"] > 0:
+        smooth_box = last_boxes[camera_name]["smooth_box"].astype(int)
+        x1, y1, x2, y2 = smooth_box
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
+        letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
+        cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+        last_boxes[camera_name]["counter"] -= 1
 
     frames_dict[camera_name] = frame
 
