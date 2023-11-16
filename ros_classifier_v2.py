@@ -16,6 +16,8 @@ letter_model = YOLO('letter.pt')
 
 yolo_classes = {0: "Blue Box", 1: "Green Box"}
 letter_classes = {0: "A", 1: "B", 2: "C"}
+WIDTH = 320
+HEIGHT = 240
 
 bridge = CvBridge()
 
@@ -37,13 +39,17 @@ def image_callback_3(msg):
     process_image(msg, "Camera 3", pub_bbox3)
 
 def combine_and_show_frames():
-    # Combina todos os frames em um único frame para exibição
-    combined_frame = np.hstack(tuple(frames_dict.values()))
+    # Redimensiona cada frame antes de combiná-los
+    resized_frames = [cv2.resize(frame, (WIDTH, HEIGHT)) for frame in frames_dict.values() if frame is not None]
+
+    # Combina todos os frames redimensionados em um único frame para exibição
+    combined_frame = np.hstack(tuple(resized_frames))
 
     cv2.imshow("Inference - Combined Cameras", combined_frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         cv2.destroyAllWindows()
         rospy.signal_shutdown("User terminated")
+
 
 # Dicionário para armazenar a última bounding box e contador para cada câmera
 last_bbox = {"Camera 1": {"bbox": None, "counter": 0},
@@ -114,9 +120,9 @@ if __name__ == '__main__':
     rospy.init_node('image_listener_node')
 
     # Subscreva nos tópicos de imagem ROS
-    rospy.Subscriber("/usb_cam1/image_raw", Image, image_callback_1)
-    rospy.Subscriber("/usb_cam2/image_raw", Image, image_callback_2)
-    rospy.Subscriber("/usb_cam3/image_raw", Image, image_callback_3)
+    rospy.Subscriber("/usb_cam1/image_raw", Image, image_callback_1, queue_size=1)
+    rospy.Subscriber("/usb_cam2/image_raw", Image, image_callback_2, queue_size=1)
+    rospy.Subscriber("/usb_cam3/image_raw", Image, image_callback_3, queue_size=1)
 
     # Mantenha o nó em execução até que seja fechado
     while not rospy.is_shutdown():
