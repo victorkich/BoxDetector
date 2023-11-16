@@ -16,8 +16,8 @@ letter_model = YOLO('letter.pt')
 
 yolo_classes = {0: "Blue Box", 1: "Green Box"}
 letter_classes = {0: "A", 1: "B", 2: "C"}
-WIDTH = 360
-HEIGHT = 240
+WIDTH = 480
+HEIGHT = 360
 
 bridge = CvBridge()
 
@@ -43,7 +43,7 @@ def combine_and_show_frames():
     resized_frames = [cv2.resize(frame, (WIDTH, HEIGHT)) for frame in frames_dict.values() if frame is not None]
 
     # Combina todos os frames redimensionados em um único frame para exibição
-    combined_frame = np.hstack(tuple(resized_frames))
+    combined_frame = np.hstack(tuple(resized_frames[[2, 0, 1]]))
 
     cv2.imshow("Inference - Combined Cameras", combined_frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
