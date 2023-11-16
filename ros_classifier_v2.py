@@ -41,9 +41,10 @@ def image_callback_3(msg):
 def combine_and_show_frames():
     # Redimensiona cada frame antes de combiná-los
     resized_frames = [cv2.resize(frame, (WIDTH, HEIGHT)) for frame in frames_dict.values() if frame is not None]
+    resized_frames = [resized_frames[2], resized_frames[0], resized_frames[1]]
 
     # Combina todos os frames redimensionados em um único frame para exibição
-    combined_frame = np.hstack(tuple(resized_frames[[2, 0, 1]]))
+    combined_frame = np.hstack(tuple(resized_frames))
 
     cv2.imshow("Inference - Combined Cameras", combined_frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
