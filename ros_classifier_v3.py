@@ -40,8 +40,9 @@ def image_callback_3(msg):
 
 def combine_and_show_frames():
     # Redimensiona cada frame antes de combiná-los
-    resized_frames = [cv2.resize(frame, (WIDTH, HEIGHT)) if frame is not None else np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8) for frame in frames_dict.values()]
-    
+    resized_frames = [cv2.resize(frame, (WIDTH, HEIGHT)) for frame in frames_dict.values() if frame is not None]
+    resized_frames = [resized_frames[2], resized_frames[0], resized_frames[1]]
+
     # Combina todos os frames redimensionados em um único frame para exibição
     combined_frame = np.hstack(tuple(resized_frames))
 
@@ -60,28 +61,37 @@ def process_image(msg, camera_name, publisher):
     classes = boxes.cls
     xyxys = boxes.xyxy
 
-    # Desenha a bounding box apenas no frame correspondente
+    # Processa cada bounding box detectada
     for i in range(len(confidences)):
         if confidences[i] > 0.75:
             box = xyxys[i]
             conf = confidences[i]
             cls_idx = classes[i]
+            x1, y1, x2, y2 = map(int, box[:4])
 
             # Cria a mensagem BoundingBox
             bbox_msg = BoundingBox()
             bbox_msg.Class = yolo_classes[int(cls_idx)]
             bbox_msg.probability = conf
-            bbox_msg.xmin, bbox_msg.ymin, bbox_msg.xmax, bbox_msg.ymax = map(int, box[:4])
+            bbox_msg.xmin = x1
+            bbox_msg.ymin = y1
+            bbox_msg.xmax = x2
+            bbox_msg.ymax = y2
 
             # Publica a mensagem
             publisher.publish(bbox_msg)
 
+            # Extrai a ROI do frame para detecção de letra
+            roi = frame[y1:y2, x1:x2]
+            result = letter_model(roi)
+
             # Anota o frame original com YOLO box, classe e confiança
-            cv2.rectangle(frame, (bbox_msg.xmin, bbox_msg.ymin), (bbox_msg.xmax, bbox_msg.ymax), (0, 255, 0), 2)
-            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
-            letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
-            cv2.putText(frame, yolo_label, (bbox_msg.xmin, bbox_msg.ymin - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            cv2.putText(frame, letter_label, (bbox_msg.xmin, bbox_msg.ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}"
+            if result:
+                letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
+                cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     frames_dict[camera_name] = frame
 
