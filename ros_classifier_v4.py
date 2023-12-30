@@ -66,6 +66,7 @@ last_bbox = {"Camera 1": {"bbox": None, "counter": 0},
 
 def process_image(msg, camera_name, publisher):
     # global frames_dict, last_bbox
+    global last_bbox
     frame = bridge.imgmsg_to_cv2(msg, "bgr8")
     res = yolo_model(frame)
 
