@@ -90,29 +90,33 @@ def process_image(msg, camera_name, publisher):
         conf = last_bbox[camera_name]["conf"]
         x1, y1, x2, y2 = map(int, box[:4])
 
-        # Creating the BoundingBox Message
-        bbox_msg = BoundingBox()
-        bbox_msg.Class = yolo_classes[int(cls_idx)]
-        bbox_msg.probability = conf
-        bbox_msg.xmin = x1
-        bbox_msg.ymin = y1
-        bbox_msg.xmax = x2
-        bbox_msg.ymax = y2
-
-        # Publishing
-        publisher.publish(bbox_msg)
-
         # Extract ROI from the frame
         roi = frame[y1:y2, x1:x2]
         
         result = letter_model(roi)
 
-        # Annotate original frame with YOLO box, class, and confidence
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
-        letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
-        cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-        cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        letter_conf = result[0].probs.top1conf
+
+        # Check if letter confidence is above 80%
+        if letter_conf >= 0.80:
+            # Creating the BoundingBox Message
+            bbox_msg = BoundingBox()
+            bbox_msg.Class = yolo_classes[int(cls_idx)]
+            bbox_msg.probability = conf
+            bbox_msg.xmin = x1
+            bbox_msg.ymin = y1
+            bbox_msg.xmax = x2
+            bbox_msg.ymax = y2
+
+            # Publishing
+            publisher.publish(bbox_msg)
+
+            # Annotate original frame with YOLO box, class, and confidence
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
+            letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {letter_conf:.2f}"
+            cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     frames_dict[camera_name] = frame
 
