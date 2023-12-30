@@ -39,9 +39,12 @@ def image_callback_3(msg):
     process_image(msg, "Camera 3", pub_bbox3)
 
 def combine_and_show_frames():
+    # Verifica se todas as imagens estão disponíveis
+    if not all(frame is not None for frame in frames_dict.values()):
+        return
+
     # Redimensiona cada frame antes de combiná-los
-    resized_frames = [cv2.resize(frame, (WIDTH, HEIGHT)) for frame in frames_dict.values() if frame is not None]
-    resized_frames = [resized_frames[2], resized_frames[0], resized_frames[1]]
+    resized_frames = [cv2.resize(frames_dict[key], (WIDTH, HEIGHT)) for key in sorted(frames_dict.keys())]
 
     # Combina todos os frames redimensionados em um único frame para exibição
     combined_frame = np.hstack(tuple(resized_frames))
@@ -61,7 +64,7 @@ def process_image(msg, camera_name, publisher):
     classes = boxes.cls
     xyxys = boxes.xyxy
 
-    # Processa cada bounding box detectada
+    # Desenha as bounding boxes com confiança suficiente
     for i in range(len(confidences)):
         if confidences[i] > 0.75:
             box = xyxys[i]
@@ -69,7 +72,7 @@ def process_image(msg, camera_name, publisher):
             cls_idx = classes[i]
             x1, y1, x2, y2 = map(int, box[:4])
 
-            # Cria a mensagem BoundingBox
+            # Creating the BoundingBox Message
             bbox_msg = BoundingBox()
             bbox_msg.Class = yolo_classes[int(cls_idx)]
             bbox_msg.probability = conf
@@ -78,30 +81,31 @@ def process_image(msg, camera_name, publisher):
             bbox_msg.xmax = x2
             bbox_msg.ymax = y2
 
-            # Publica a mensagem
+            # Publishing
             publisher.publish(bbox_msg)
 
-            # Extrai a ROI do frame para detecção de letra
+            # Extract ROI from the frame
             roi = frame[y1:y2, x1:x2]
             result = letter_model(roi)
 
-            # Anota o frame original com YOLO box, classe e confiança
+            # Annotate original frame with YOLO box, class, and confidence
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}"
-            if result:
-                letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
-                cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            yolo_label = f"{yolo_classes[int(cls_idx)]}: {conf:.2f}" 
+            letter_label = f"Letter {letter_classes[result[0].probs.top1]}: {result[0].probs.top1conf:.2f}"
             cv2.putText(frame, yolo_label, (x1, y1 - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.putText(frame, letter_label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
     frames_dict[camera_name] = frame
+
 
 if __name__ == '__main__':
     rospy.init_node('image_listener_node')
 
-    # Inscreve-se nos tópicos de imagem ROS
+    # Inscreva-se nos tópicos de imagem ROS
     rospy.Subscriber("/usb_cam1/image_raw", Image, image_callback_1, queue_size=1)
     rospy.Subscriber("/usb_cam2/image_raw", Image, image_callback_2, queue_size=1)
     rospy.Subscriber("/usb_cam3/image_raw", Image, image_callback_3, queue_size=1)
 
+    # Mantenha o nó em execução até que seja fechado
     while not rospy.is_shutdown():
         combine_and_show_frames()
