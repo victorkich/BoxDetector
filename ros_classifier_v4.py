@@ -143,5 +143,6 @@ if __name__ == '__main__':
     # Mantenha o nó em execução até que seja fechado
     while not rospy.is_shutdown():
         # Se todas as câmeras forneceram seus frames, mostramos o frame combinado
-        if all(frame is not None for frame in frames_dict.values()):
+        if all(frame is not None for frame in [frame1, frame2, frame3]):
+        #if all(frame is not None for frame in frames_dict.values()):
             combine_and_show_frames()
