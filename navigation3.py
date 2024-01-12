@@ -19,18 +19,6 @@ boxes = {'left': None, 'front': None, 'right': None}
 rospy.init_node('box_approach_node')
 cmd_vel_publisher = rospy.Publisher('/cmd_vel_source', Twist, queue_size=10)
 
-def bounding_box_callback1(data):
-    global boxes
-    boxes['left'] = data.bounding_boxes
-
-def bounding_box_callback2(data):
-    global boxes
-    boxes['front'] = data.bounding_boxes
-
-def bounding_box_callback3(data):
-    global boxes
-    boxes['right'] = data.bounding_boxes
-
 def process_boxes():
     """
     Processes the boxes from the three cameras and moves the robot.
@@ -46,19 +34,31 @@ def process_boxes():
     else:
         rotate_robot()
 
+def bounding_box_callback1(data):
+    global boxes
+    boxes['left'] = data
+
+def bounding_box_callback2(data):
+    global boxes
+    boxes['front'] = data
+
+def bounding_box_callback3(data):
+    global boxes
+    boxes['right'] = data
+
 def get_target_box():
     """
     Returns the box with the highest probability of the current target from the three cameras.
     """
     global current_target, boxes
     best_box = None
-    for camera, bounding_boxes in boxes.items():
-        # Check if bounding_boxes is not None before iterating
-        if bounding_boxes:
-            for box in bounding_boxes:
-                if box.Class == current_target and box.probability >= DETECTION_THRESHOLD:
-                    if not best_box or box.probability > best_box['box'].probability:
-                        best_box = {'camera': camera, 'box': box}
+    for camera, bounding_box in boxes.items():
+        # Check if bounding_box is not None before processing
+        if bounding_box:
+            box_size = (bounding_box.xmax - bounding_box.xmin) * (bounding_box.ymax - bounding_box.ymin)
+            if bounding_box.Class == current_target and bounding_box.probability >= DETECTION_THRESHOLD:
+                if not best_box or bounding_box.probability > best_box['box'].probability:
+                    best_box = {'camera': camera, 'box': bounding_box, 'size': box_size}
     return best_box
 
 def center_and_move_forward(box):
