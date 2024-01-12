@@ -73,6 +73,7 @@ def center_and_move_forward(box):
     box = box['box']
     center_x = (box.xmin + box.xmax) / 2
     error = center_x - CAMERA_WIDTH / 2
+    print("Center x:", center_x, "Error", error)
     twist = Twist()
 
     if abs(error) > 20:  # Centering tolerance
