@@ -8,7 +8,7 @@ from ktm_pede_detector_msgs.msg import BoundingBox
 ANGULAR_SPEED = 0.1
 LINEAR_SPEED = 0.1
 DETECTION_THRESHOLD = 0.7  # Adjust as needed
-CAMERA_WIDTH = 640  # Adjust to match the width of your camera's image
+CAMERA_WIDTH = 480  # Adjust to match the width of your camera's image
 
 # Global variables
 current_target = 'green_box'  # Toggle between 'green_box' and 'blue_box'
@@ -17,7 +17,7 @@ boxes = {'left': None, 'front': None, 'right': None}
 
 # ROS node initialization
 rospy.init_node('box_approach_node')
-cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+cmd_vel_publisher = rospy.Publisher('/cmd_vel_source', Twist, queue_size=10)
 
 def bounding_box_callback1(data):
     global boxes
@@ -53,10 +53,12 @@ def get_target_box():
     global current_target, boxes
     best_box = None
     for camera, bounding_boxes in boxes.items():
-        for box in bounding_boxes:
-            if box.Class == current_target and box.probability >= DETECTION_THRESHOLD:
-                if not best_box or box.probability > best_box['box'].probability:
-                    best_box = {'camera': camera, 'box': box}
+        # Check if bounding_boxes is not None before iterating
+        if bounding_boxes:
+            for box in bounding_boxes:
+                if box.Class == current_target and box.probability >= DETECTION_THRESHOLD:
+                    if not best_box or box.probability > best_box['box'].probability:
+                        best_box = {'camera': camera, 'box': box}
     return best_box
 
 def center_and_move_forward(box):
