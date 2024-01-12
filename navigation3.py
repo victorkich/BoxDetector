@@ -28,10 +28,13 @@ def process_boxes():
     target_box = get_target_box()
     if target_box:
         if target_box['camera'] == 'front':
+            print("Centering and moving forward...")
             center_and_move_forward(target_box)
         else:
+            print("Rotating towards box...")
             rotate_towards_box(target_box['camera'])
     else:
+        print("Rotating the robot in order to find the target...")
         rotate_robot()
 
 def bounding_box_callback1(data):
@@ -52,7 +55,6 @@ def get_target_box():
     """
     global current_target, boxes
     best_box = None
-    print("T1")
     for camera, bounding_box in boxes.items():
         # Check if bounding_box is not None before processing
         if bounding_box:
