@@ -85,6 +85,7 @@ def center_and_move_forward(box):
         # Add logic to update `letter_detected`
 
     cmd_vel_publisher.publish(twist)
+    print(twist)
 
 def rotate_towards_box(camera):
     """
@@ -97,6 +98,7 @@ def rotate_towards_box(camera):
         twist.angular.z = -ANGULAR_SPEED
 
     cmd_vel_publisher.publish(twist)
+    print(twist)
 
 def rotate_robot():
     """
@@ -105,6 +107,7 @@ def rotate_robot():
     twist = Twist()
     twist.angular.z = ANGULAR_SPEED
     cmd_vel_publisher.publish(twist)
+    print(twist)
 
 def main():
     rospy.Subscriber('/camera1/bounding_boxes', BoundingBox, bounding_box_callback1)
