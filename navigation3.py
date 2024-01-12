@@ -6,6 +6,7 @@ from ktm_pede_detector_msgs.msg import BoundingBox
 
 # Constants
 ANGULAR_SPEED = 0.1
+ANGULAR_SPEED_DYNAMIC = 0.1
 LINEAR_SPEED = 0.1
 DETECTION_THRESHOLD = 0.7  # Adjust as needed
 CAMERA_WIDTH = 480  # Adjust to match the width of your camera's image
@@ -99,6 +100,7 @@ def rotate_towards_box(camera):
         twist.angular.z = ANGULAR_SPEED
     elif camera == 'right':
         twist.angular.z = -ANGULAR_SPEED
+    ANGULAR_SPEED_DYNAMIC = twist.angular.z
 
     cmd_vel_publisher.publish(twist)
 
@@ -107,7 +109,7 @@ def rotate_robot():
     Rotates the robot on its own axis.
     """
     twist = Twist()
-    twist.angular.z = ANGULAR_SPEED
+    twist.angular.z = ANGULAR_SPEED_DYNAMIC
     cmd_vel_publisher.publish(twist)
 
 def main():
@@ -115,7 +117,7 @@ def main():
     rospy.Subscriber('/camera2/bounding_boxes', BoundingBox, bounding_box_callback2)
     rospy.Subscriber('/camera3/bounding_boxes', BoundingBox, bounding_box_callback3)
 
-    rate = rospy.Rate(3)  # 10 Hz
+    rate = rospy.Rate(4)  # 10 Hz
     while not rospy.is_shutdown():
         process_boxes()
         rate.sleep()
