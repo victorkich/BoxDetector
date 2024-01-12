@@ -39,15 +39,15 @@ def process_boxes():
 
 def bounding_box_callback1(data):
     global boxes
-    boxes['left'] = data
+    boxes['front'] = data
 
 def bounding_box_callback2(data):
     global boxes
-    boxes['front'] = data
+    boxes['right'] = data
 
 def bounding_box_callback3(data):
     global boxes
-    boxes['right'] = data
+    boxes['left'] = data
 
 def get_target_box():
     """
