@@ -72,8 +72,11 @@ def center_and_move_forward(box):
 
     if abs(error) > 20:  # Centering tolerance
         twist.angular.z = -ANGULAR_SPEED if error > 0 else ANGULAR_SPEED
+        print("Object is not centralized yet!")
+        print("Turning " + "right ->" if twist.angular.z > 0 else "<- left")
     else:
         twist.linear.x = LINEAR_SPEED
+        print("Going forward!")
         # Add logic to update `letter_detected`
 
     cmd_vel_publisher.publish(twist)
