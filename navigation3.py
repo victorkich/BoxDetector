@@ -28,13 +28,13 @@ def process_boxes():
     target_box = get_target_box()
     if target_box:
         if target_box['camera'] == 'front':
-            print("Centering and moving forward...")
+            print("Centering and moving forward... Current target:", current_target)
             center_and_move_forward(target_box)
         else:
-            print("Rotating towards box...")
+            print("Rotating towards box... Current target:", current_target)
             rotate_towards_box(target_box['camera'])
     else:
-        print("Rotating the robot in order to find the target...")
+        print("Rotating the robot in order to find the target... Current target:", current_target)
         rotate_robot()
 
 def bounding_box_callback1(data):
