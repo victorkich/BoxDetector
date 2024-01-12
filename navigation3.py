@@ -5,8 +5,8 @@ from geometry_msgs.msg import Twist
 from ktm_pede_detector_msgs.msg import BoundingBox
 
 # Constants
-ANGULAR_SPEED = 0.1
-ANGULAR_SPEED_DYNAMIC = 0.1
+ANGULAR_SPEED = 0.05
+ANGULAR_SPEED_DYNAMIC = 0.05
 LINEAR_SPEED = 0.1
 DETECTION_THRESHOLD = 0.7  # Adjust as needed
 CAMERA_WIDTH = 480  # Adjust to match the width of your camera's image
@@ -78,9 +78,9 @@ def center_and_move_forward(box):
     twist = Twist()
 
     if abs(error) > 20:  # Centering tolerance
-        twist.angular.z = -ANGULAR_SPEED if error > 0 else ANGULAR_SPEED
+        twist.angular.z = -ANGULAR_SPEED if error < 0 else ANGULAR_SPEED
         print("Object is not centralized yet!")
-        print("Turning " + "right ->" if twist.angular.z > 0 else "<- left")
+        print("Turning " + "right ->" if twist.angular.z < 0 else "<- left")
     else:
         if b_size < 20000:
             twist.linear.x = LINEAR_SPEED

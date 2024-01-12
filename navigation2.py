@@ -4,17 +4,18 @@ import rospy
 from geometry_msgs.msg import Twist
 from ktm_pede_detector_msgs.msg import BoundingBox
 
-# Constantes
-SIZE_THRESHOLD = 5000  # Limiar para o tamanho do retângulo que indica proximidade (ajuste conforme necessário)
-SPEED_LINEAR = 0.1  # Velocidade linear para avançar em direção à caixa
-SPEED_ANGULAR = 0.1 # Velocidade angular para centralizar com a caixa
-BOX_TARGET = "Green Box"  # Inicialmente procurando pela caixa verde
+# Constants
+SIZE_THRESHOLD = 5000  # Threshold for box size indicating proximity
+SPEED_LINEAR = 0.1  # Linear speed to approach the box
+SPEED_ANGULAR = 0.05  # Angular speed to align with the box
+BOX_TARGET = "Green Box"  # Initially targeting the green box
+IMAGE_WIDTH = 640  # Width of the camera image
 
-# Variáveis globais
+# Global variables
 best_box = None
 current_letter = None
 
-# Inicializa o nó
+# Initialize the node
 rospy.init_node('box_approach_node')
 cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
@@ -35,23 +36,23 @@ def approach_box():
     twist_msg = Twist()
     bbox_msg, box_size = best_box
 
-    # Calcula o centro da bounding box
+    # Calculate the center of the bounding box
     center_x = (bbox_msg.xmin + bbox_msg.xmax) / 2
-    error_x = center_x - 320  # Assumindo que a largura da imagem é 640 pixels
+    error_x = center_x - (IMAGE_WIDTH / 2)
 
-    # Ajusta a velocidade angular para centralizar a caixa
-    twist_msg.angular.z = -error_x * SPEED_ANGULAR / 320
+    # Adjust angular velocity to align with the box
+    twist_msg.angular.z = -error_x * SPEED_ANGULAR / (IMAGE_WIDTH / 2)
 
-    # Verifica se a caixa é grande o suficiente (indicando proximidade)
+    # Check if the box is large enough (indicating proximity)
     if box_size < SIZE_THRESHOLD:
         twist_msg.linear.x = SPEED_LINEAR
 
     cmd_vel_publisher.publish(twist_msg)
 
-    # Checa se o robô está próximo o suficiente da caixa e se a letra foi detectada
+    # Check if the robot is close enough to the box and if the letter has been detected
     if box_size >= SIZE_THRESHOLD and current_letter:
-        print(f"Letra na caixa {BOX_TARGET}: {current_letter.Class}")
-        # Muda o alvo para a próxima caixa
+        rospy.loginfo(f"Letter in {BOX_TARGET}: {current_letter.Class}")
+        # Switch target to the next box
         BOX_TARGET = "Blue Box" if BOX_TARGET == "Green Box" else "Green Box"
         best_box = None
         current_letter = None
