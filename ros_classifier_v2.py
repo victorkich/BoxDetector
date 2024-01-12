@@ -77,7 +77,7 @@ def process_image(msg, camera_name, publisher):
         detected = True
 
         # Atualiza a bounding box e o contador
-        last_bbox[camera_name] = {"bbox": box, "counter": 30, "cls_idx": cls_idx, "conf": conf}
+        last_bbox[camera_name] = {"bbox": box, "counter": 10, "cls_idx": cls_idx, "conf": conf}
 
     # Diminui o contador se não houver detecção
     if not detected and last_bbox[camera_name]["counter"] > 0:
