@@ -28,7 +28,7 @@ def process_boxes():
     target_box = get_target_box()
     if target_box:
         if target_box['camera'] == 'front':
-            center_and_move_forward(target_box['box'])
+            center_and_move_forward(target_box)
         else:
             rotate_towards_box(target_box['camera'])
     else:
@@ -70,7 +70,9 @@ def center_and_move_forward(box):
     """
     Centers the box on the front camera and moves the robot forward.
     """
-    global letter_detected
+    global current_target
+    b_size = box['size']
+    box = box['box']
     center_x = (box.xmin + box.xmax) / 2
     error = center_x - CAMERA_WIDTH / 2
     twist = Twist()
@@ -80,12 +82,14 @@ def center_and_move_forward(box):
         print("Object is not centralized yet!")
         print("Turning " + "right ->" if twist.angular.z > 0 else "<- left")
     else:
-        twist.linear.x = LINEAR_SPEED
-        print("Going forward!")
-        # Add logic to update `letter_detected`
+        if b_size < 20000:
+            twist.linear.x = LINEAR_SPEED
+            print("Going forward!")
+        else:
+            current_target = "Blue Box" if current_target == "Green Box" else "Green Box"
+            print("Updating target to ", current_target)
 
     cmd_vel_publisher.publish(twist)
-    print(twist)
 
 def rotate_towards_box(camera):
     """
@@ -98,7 +102,6 @@ def rotate_towards_box(camera):
         twist.angular.z = -ANGULAR_SPEED
 
     cmd_vel_publisher.publish(twist)
-    print(twist)
 
 def rotate_robot():
     """
@@ -107,14 +110,13 @@ def rotate_robot():
     twist = Twist()
     twist.angular.z = ANGULAR_SPEED
     cmd_vel_publisher.publish(twist)
-    print(twist)
 
 def main():
     rospy.Subscriber('/camera1/bounding_boxes', BoundingBox, bounding_box_callback1)
     rospy.Subscriber('/camera2/bounding_boxes', BoundingBox, bounding_box_callback2)
     rospy.Subscriber('/camera3/bounding_boxes', BoundingBox, bounding_box_callback3)
 
-    rate = rospy.Rate(10)  # 10 Hz
+    rate = rospy.Rate(3)  # 10 Hz
     while not rospy.is_shutdown():
         process_boxes()
         rate.sleep()
