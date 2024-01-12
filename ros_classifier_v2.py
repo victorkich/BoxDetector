@@ -98,7 +98,7 @@ def process_image(msg, camera_name, publisher):
         letter_conf = result[0].probs.top1conf
 
         # Check if letter confidence is above 80%
-        if letter_conf >= 0.80:
+        if letter_conf >= 0.50:
             # Creating the BoundingBox Message
             bbox_msg = BoundingBox()
             bbox_msg.Class = yolo_classes[int(cls_idx)]
