@@ -69,7 +69,7 @@ def process_image(msg, camera_name, publisher):
 
     # Verifica se há alguma detecção com confiança suficiente
     detected = False
-    if len(confidences) > 0 and max(confidences) > 0.75:
+    if len(confidences) > 0 and max(confidences) > 0.5:
         higher_conf = np.argmax(confidences.cpu().numpy())
         box = xyxys[higher_conf]
         conf = confidences[higher_conf]
