@@ -52,12 +52,16 @@ def get_target_box():
     """
     global current_target, boxes
     best_box = None
+    print("T1")
     for camera, bounding_box in boxes.items():
         # Check if bounding_box is not None before processing
         if bounding_box:
+            print("T2")
             box_size = (bounding_box.xmax - bounding_box.xmin) * (bounding_box.ymax - bounding_box.ymin)
             if bounding_box.Class == current_target and bounding_box.probability >= DETECTION_THRESHOLD:
+                print("T3")
                 if not best_box or bounding_box.probability > best_box['box'].probability:
+                    print("T4")
                     best_box = {'camera': camera, 'box': bounding_box, 'size': box_size}
     return best_box
 
