@@ -11,7 +11,7 @@ DETECTION_THRESHOLD = 0.7  # Adjust as needed
 CAMERA_WIDTH = 480  # Adjust to match the width of your camera's image
 
 # Global variables
-current_target = 'green_box'  # Toggle between 'green_box' and 'blue_box'
+current_target = "Green Box"  # Toggle between 'green_box' and 'blue_box'
 letter_detected = None
 boxes = {'left': None, 'front': None, 'right': None}
 
@@ -58,6 +58,7 @@ def get_target_box():
         if bounding_box:
             print("T2")
             box_size = (bounding_box.xmax - bounding_box.xmin) * (bounding_box.ymax - bounding_box.ymin)
+            print("Box size:", box_size)
             if bounding_box.Class == current_target and bounding_box.probability >= DETECTION_THRESHOLD:
                 print("T3")
                 if not best_box or bounding_box.probability > best_box['box'].probability:
